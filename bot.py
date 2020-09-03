@@ -2,6 +2,8 @@ import aiogram
 
 import config
 import logging
+import datetime
+import calendar
 
 from aiogram import Bot, Dispatcher, executor, types
 from sqliter import SQLighter
@@ -30,20 +32,13 @@ lessons_time = {
 
 days = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
 
+print(calendar.day_abbr[datetime.datetime.now().weekday()])
 
-def my_spliter(a):
-    a = str(a).split()
-    res = list()
-    itog = list()
-    for i in a:
-        if len(' '.join(res)) > 900:
-            res.append(i)
-            itog.append(' '.join(res))
-            res.clear()
-        else:
-            res.append(i)
-    itog.append(' '.join(res))
-    return itog
+
+def talk_date():
+    ser = {'Mon': 'понедельник', "Tue": 'вторник', 'Wed': 'среда', 'Thu': 'четверг', 'Fri': 'пятница', 'Sat': 'суббота', 'Sun': 'воскресенье'}
+    day = str(calendar.day_abbr[datetime.datetime.now().weekday()])
+    return ser[day]
 
 
 @dp.message_handler(commands=['lessons_time'])
@@ -53,6 +48,7 @@ async def subscribe(message: types.Message):
         st1 = f'{i}) {lessons_time[i]}' + "\n"
         st += st1
     await  bot.send_message(message.from_user.id, st)
+
 
 @dp.message_handler(commands=['my_lessons'])
 async def subscribe(message: types.Message):
@@ -67,13 +63,26 @@ async def subscribe(message: types.Message):
 @dp.message_handler()
 async def subscribe(message: types.Message):
     mes = str(message["text"]).lower().split()
-    if mes[0] in days and mes[1].isdigit() and mes[2]== '-':
+    if len(mes) > 1 and mes[0] in days and mes[1].isdigit() and mes[2] == '-':
         if mes[1] in lessons_time.keys():
             time = lessons_time[mes[1]]
             db.add_lesson(message.from_user.id, mes[0], mes[1], ' '.join(mes[3:]), time)
             await bot.send_message(message.from_user.id, "Всё добавленно")
         else:
             await  bot.send_message(message.from_user.id, "Вы ошиблись")
+    elif len(mes) == 1 and mes[0] in days:
+        z = f'{mes[0]}:' + '\n'
+        for j in db.user_search(message.from_user.id, mes[0]):
+            q = f'{j[3]} {j[4]}' + '\n'
+            z += q
+        await bot.send_message(message.from_user.id, z)
+    elif len(mes)  == 1 and mes[0] == 'сегодня':
+        mes[0] = talk_date()
+        z = f'{mes[0]}:' + '\n'
+        for j in db.user_search(message.from_user.id, mes[0]):
+            q = f'{j[3]} {j[4]}' + '\n'
+            z += q
+        await bot.send_message(message.from_user.id, z)
     else:
         await  bot.send_message(message.from_user.id, "Вы ошиблись")
 
@@ -92,7 +101,7 @@ async def subscribe(message: types.Message):
                                  disable_notification=True)
         except Exception as e:
             if str(e) == "Media_caption_too_long":
-                new = my_spliter(i[2])
+                new = '1'
                 await bot.send_photo(message.from_user.id,
                                      q + '/' + i[4],
                                      caption=i[1] + "\n" + "Общая информация: " + new[
