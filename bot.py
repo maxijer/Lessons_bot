@@ -7,7 +7,7 @@ import calendar
 
 from aiogram import Bot, Dispatcher, executor, types
 from sqliter import SQLighter
-from OLIMPIADA import Olymp
+import asyncio
 
 logging.basicConfig(level=logging.INFO)
 
@@ -33,18 +33,18 @@ lessons_time = {
 }
 
 where_napomin = {
-    '1': '07:45',
-    '2': '08:40',
-    '3': '09:25',
-    '4': '10:10',
-    '5': '11:00',
-    '6': '11:50',
-    '7': '12:40',
-    '8': '13:30',
-    '9': '14:15',
-    '10': '15:00',
-    '11': '15:45',
-    '12': '16:30'
+    '07:45': '1',
+    '08:40': '2',
+    '09:25': '3',
+    '10:10': '4',
+    '11:00': '5',
+    '11:50': '6',
+    '12:40': '7',
+    '13:30': '8',
+    '14:15': '9',
+    '15:00 ': '10',
+    '15:45 ': '11',
+    '16:30 ': '12'
 }
 
 days = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
@@ -60,7 +60,18 @@ def talk_date():
 def napominalka():
     day1 = talk_date()
     time = str(datetime.datetime.now()).split()[1]
-    print(':'.join(time.split(':')[:2]))
+    itog_time = ':'.join(time.split(':')[:2])
+    spis = list()
+    try:
+        subscr = db.get_subscriptions()
+        for i in subscr:
+            lesson = where_napomin[itog_time]
+            inform = db.check_lesson(i[1], day1, lesson)
+            if inform[0][4] != 'ничего':
+                spis.append(f'{i[1]} {inform[0][4]}')
+    except:
+        spis.append(f'стоп')
+    return spis
 
 
 napominalka()
@@ -100,7 +111,7 @@ async def subscribe(message: types.Message):
     for i in days:
         z = f'{i}:' + '\n'
         for j in db.user_search(message.from_user.id, i):
-            q = f'{j[3]} {j[4]}' + '\n'
+            q = f'{j[3]}. {j[4]}' + '\n'
             z += q
         await bot.send_message(message.from_user.id, z)
 
@@ -132,13 +143,16 @@ async def subscribe(message: types.Message):
         await  bot.send_message(message.from_user.id, "Вы ошиблись")
 
 
-# async def scheduled(wait_for):
-#    while True:
-#        await asyncio.sleep(wait_for)
-#        now = datetime.utcnow()
-#        await bot.send_message(896895871, f'{now}')
+async def scheduled(wait_for):
+    while True:
+        await asyncio.sleep(wait_for)
+        mes = napominalka()
+        for i in mes:
+            if i != 'стоп':
+                i = i.split()
+                await bot.send_message(i[0], f'Ваш следующий урок: {i[1]}')
 
 
 if __name__ == '__main__':
-    # dp.loop.create_task(scheduled(10))
+    dp.loop.create_task(scheduled(60))
     executor.start_polling(dp, skip_updates=True)

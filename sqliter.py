@@ -39,5 +39,9 @@ class SQLighter:
         with self.connection:
             return self.cursor.execute("UPDATE `subscriptions` SET `status` = ? WHERE `user_id` = ?", (status, user_id))
 
+    def check_lesson(self, user_id, day, number):  # обновление статуса
+        with self.connection:
+            return self.cursor.execute("SELECT * FROM `users` WHERE `user_id` = ? AND `day` = ?AND `number` = ?", (user_id, day, number)).fetchall()
+
     def close(self):
         self.connection.close()
