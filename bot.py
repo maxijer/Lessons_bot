@@ -27,18 +27,63 @@ lessons_time = {
     '7': '12:45-13:25',
     '8': '13:35-14:15',
     '9': '14:20-15:00',
-    '10': '15:05-15:45'
+    '10': '15:05-15:45',
+    '11': '15:50-16:30',
+    '12': '16:35-17:15'
+}
+
+where_napomin = {
+    '1': '07:45',
+    '2': '08:40',
+    '3': '09:25',
+    '4': '10:10',
+    '5': '11:00',
+    '6': '11:50',
+    '7': '12:40',
+    '8': '13:30',
+    '9': '14:15',
+    '10': '15:00',
+    '11': '15:45',
+    '12': '16:30'
 }
 
 days = ['понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота']
 
-print(calendar.day_abbr[datetime.datetime.now().weekday()])
-
 
 def talk_date():
-    ser = {'Mon': 'понедельник', "Tue": 'вторник', 'Wed': 'среда', 'Thu': 'четверг', 'Fri': 'пятница', 'Sat': 'суббота', 'Sun': 'воскресенье'}
+    ser = {'Mon': 'понедельник', "Tue": 'вторник', 'Wed': 'среда', 'Thu': 'четверг', 'Fri': 'пятница', 'Sat': 'суббота',
+           'Sun': 'воскресенье'}
     day = str(calendar.day_abbr[datetime.datetime.now().weekday()])
     return ser[day]
+
+
+def napominalka():
+    day1 = talk_date()
+    time = str(datetime.datetime.now()).split()[1]
+    print(':'.join(time.split(':')[:2]))
+
+
+napominalka()
+
+
+@dp.message_handler(commands=['subscribe'])
+async def subscribe(message: types.Message):
+    if not db.subscriber_exist(message.from_user.id):
+        # если юзера нет
+        db.add_subscriber(message.from_user.id, True)
+    else:
+        db.update_subscription(message.from_user.id, True)
+    await message.answer("Вы успешно подписались на рассылку ждите новостей )))")
+
+
+@dp.message_handler(commands=['unsubscribe'])
+async def subscribe(message: types.Message):
+    if (not db.subscriber_exist(message.from_user.id)):
+        db.add_subscriber(message.from_user.id, False)
+        await message.answer('Вы итак не подписаны')
+    else:
+        db.update_subscription(message.from_user.id, False)
+        await message.answer("Вы успешно отписались от рассылки (((")
 
 
 @dp.message_handler(commands=['lessons_time'])
@@ -76,7 +121,7 @@ async def subscribe(message: types.Message):
             q = f'{j[3]} {j[4]}' + '\n'
             z += q
         await bot.send_message(message.from_user.id, z)
-    elif len(mes)  == 1 and mes[0] == 'сегодня':
+    elif len(mes) == 1 and mes[0] == 'сегодня':
         mes[0] = talk_date()
         z = f'{mes[0]}:' + '\n'
         for j in db.user_search(message.from_user.id, mes[0]):
@@ -85,104 +130,6 @@ async def subscribe(message: types.Message):
         await bot.send_message(message.from_user.id, z)
     else:
         await  bot.send_message(message.from_user.id, "Вы ошиблись")
-
-
-@dp.message_handler(commands=['physics'])
-async def subscribe(message: types.Message):
-    z = db_2.physics()
-    for i in z:
-        q = str(i[3]).replace('activity', '/files/m_activity')
-        print(i)
-        try:
-            await bot.send_photo(message.from_user.id,
-                                 q + '/' + i[4],
-                                 caption=i[1] + "\n" + "Общая информация: " + i[
-                                     2] + "\n" + "Более подробная информация по ссылке: " + "\n" + i[3],
-                                 disable_notification=True)
-        except Exception as e:
-            if str(e) == "Media_caption_too_long":
-                new = '1'
-                await bot.send_photo(message.from_user.id,
-                                     q + '/' + i[4],
-                                     caption=i[1] + "\n" + "Общая информация: " + new[
-                                         0] + "\n",
-                                     disable_notification=True)
-                for t in new[1:]:
-                    await bot.send_message(message.from_user.id, t)
-                await  bot.send_message(message.from_user.id, "Более подробная информация по ссылке: " + "\n" + i[3])
-            else:
-                new = my_spliter(i[2])
-                print(q)
-                for t in new:
-                    await bot.send_message(message.from_user.id, t)
-                await  bot.send_message(message.from_user.id, "Более подробная информация по ссылке: " + "\n" + i[3])
-
-
-@dp.message_handler(commands=['math'])
-async def subscribe(message: types.Message):
-    z = db_2.math()
-    z = z
-    for i in z:
-        q = str(i[3]).replace('activity', '/files/m_activity')
-        try:
-            await bot.send_photo(message.from_user.id,
-                                 q + '/' + i[4],
-                                 caption=i[1] + "\n" + "Общая информация: " + i[
-                                     2] + "\n" + "Более подробная информация по ссылке: " + "\n" + i[3],
-                                 disable_notification=True)
-        except Exception as e:
-            if str(e) == "Media_caption_too_long":
-                new = my_spliter(i[2])
-                await bot.send_photo(message.from_user.id,
-                                     q + '/' + i[4],
-                                     caption=i[1] + "\n" + "Общая информация: " + new[
-                                         0] + "\n",
-                                     disable_notification=True)
-                for t in new[1:]:
-                    await bot.send_message(message.from_user.id, t)
-                await  bot.send_message(message.from_user.id, "Более подробная информация по ссылке: " + "\n" + i[3])
-            else:
-                new = my_spliter(i[2])
-                print(q)
-                for t in new:
-                    await bot.send_message(message.from_user.id, t)
-                await  bot.send_message(message.from_user.id, "Более подробная информация по ссылке: " + "\n" + i[3])
-
-
-@dp.message_handler(commands=['inform'])
-async def subscribe(message: types.Message):
-    z = db_2.inform()
-    for i in z:
-        q = str(i[3]).replace('activity', '/files/m_activity')
-        try:
-            await bot.send_photo(message.from_user.id,
-                                 q + '/' + i[4],
-                                 caption=i[1] + "\n" + "Общая информация: " + i[
-                                     2] + "\n" + "Более подробная информация по ссылке: " + "\n" + i[3],
-                                 disable_notification=True)
-        except Exception as e:
-            if str(e) == "Media_caption_too_long":
-                new = my_spliter(i[2])
-                await bot.send_photo(message.from_user.id,
-                                     q + '/' + i[4],
-                                     caption=i[1] + "\n" + "Общая информация: " + new[
-                                         0] + "\n",
-                                     disable_notification=True)
-                for t in new[1:]:
-                    await bot.send_message(message.from_user.id, t)
-                await  bot.send_message(message.from_user.id, "Более подробная информация по ссылке: " + "\n" + i[3])
-            else:
-                print(e)
-
-
-@dp.message_handler(commands=['unsubscribe'])
-async def subscribe(message: types.Message):
-    if (not db.subscriber_exist(message.from_user.id)):
-        db.add_subscriber(message.from_user.id, False)
-        await message.answer('Вы итак не подписаны')
-    else:
-        db.update_subscription(message.from_user.id, False)
-        await message.answer("Вы успешно отписались от рассылки (((")
 
 
 # async def scheduled(wait_for):
